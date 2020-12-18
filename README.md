@@ -26,8 +26,8 @@ int main() {
 
 ### Description
 
-The complexity of algorithm is ```O(n^4)``` yet. It can be easily improved by modifying ```Pool``` class,
-as ```insert``` method works with complexity ```O(n)```.
+The complexity of algorithm is ~~O(n^4)~~ O(n^3) yet. ~~It can be easily improved by modifying 'Pool' class,
+as 'insert' method works with complexity O(n)~~. Now insert method is optimized to O(1) complexity
 
 ### How to build
 
