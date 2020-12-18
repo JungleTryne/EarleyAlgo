@@ -1,5 +1,5 @@
 #include <Earley.h>
-#include <algorithm>
+
 
 void Earley::scan(size_t depth) {
     if(depth < 1) return;
@@ -15,7 +15,7 @@ void Earley::scan(size_t depth) {
 
         if(nextSymbol.terminal && nextSymbol.symbol == currentWord_[depth - 1]) {
 
-            nextPool.addSituation(EarlySituation{
+            nextPool.addSituation(EarleySituation{
                 situation.rule,
                 situation.alreadyProcessed + 1,
                 situation.position
@@ -36,10 +36,10 @@ void Earley::predict(size_t depth) {
 
         for(const GrammarRule& rule : currentGrammar_.grammarSet) {
             if(rule.initial != nextSymbol) continue;
-            currentPool.addSituation(EarlySituation{rule, 0, depth});
+            currentPool.addSituation(EarleySituation{rule, 0, depth});
 
             if(isNullable(rule)) {  //handling a rule [A -> \eps]
-                EarlySituation shiftedCurrent = situation;
+                EarleySituation shiftedCurrent = situation;
                 ++shiftedCurrent.alreadyProcessed;
                 currentPool.addSituation(shiftedCurrent);
             }
@@ -63,7 +63,7 @@ void Earley::complete(size_t depth) {
 
             if(upperNextSymbol != situation.rule.initial) continue;
 
-            currentPool.addSituation(EarlySituation{
+            currentPool.addSituation(EarleySituation{
                     upperSit.rule,
                     upperSit.alreadyProcessed + 1,
                     upperSit.position
@@ -97,11 +97,11 @@ void Earley::preparePool(size_t poolSize) {
     pool_.clear();
     pool_.resize(poolSize);
 
-    pool_[0].addSituation(EarlySituation{*currentGrammar_.grammarSet.begin(), 0, 0});
+    pool_[0].addSituation(EarleySituation{*currentGrammar_.grammarSet.begin(), 0, 0});
 }
 
 bool Earley::findFinalSituation() const {
-    EarlySituation situationToFind{*currentGrammar_.grammarSet.begin(), 1, 0};
+    EarleySituation situationToFind{*currentGrammar_.grammarSet.begin(), 1, 0};
 
     auto lastPoolSituations = pool_.back().getSituations();
     return std::find(lastPoolSituations.begin(), lastPoolSituations.end(), situationToFind) !=
@@ -110,7 +110,7 @@ bool Earley::findFinalSituation() const {
 
 Earley::Earley(const Grammar &grammar)  : currentGrammar_(grammar) {
     /* adding rule S' -> S */
-    Symbol surTerminal{true, 'K'};
+    Symbol surTerminal{true, EarleyGlobals::ADDITIONAL_NONTERMINAL};
     Symbol startSymbol = currentGrammar_.grammarSet.begin()->initial;
 
     currentGrammar_.grammarSet.push_front(GrammarRule{
@@ -120,7 +120,7 @@ Earley::Earley(const Grammar &grammar)  : currentGrammar_(grammar) {
 
 Earley::Earley(Grammar&& grammar) : currentGrammar_(std::move(grammar)) {
     /* adding rule S' -> S */
-    Symbol surTerminal{true, 'K'};
+    Symbol surTerminal{true, EarleyGlobals::ADDITIONAL_NONTERMINAL};
     Symbol startSymbol = currentGrammar_.grammarSet.begin()->initial;
 
     currentGrammar_.grammarSet.push_front(GrammarRule{
@@ -129,23 +129,45 @@ Earley::Earley(Grammar&& grammar) : currentGrammar_(std::move(grammar)) {
 }
 
 bool Earley::isNullable(const GrammarRule &rule) const {
-    return rule.result.size() == 1 && rule.result[0] == CharToSymbol(EPSILON);
+    return rule.result.size() == 1 && rule.result[0] == CharToSymbol(EarleyGlobals::EPSILON);
 }
 
-bool EarlySituation::operator==(const EarlySituation &other) const {
+bool EarleySituation::operator==(const EarleySituation &other) const {
     return rule == other.rule && alreadyProcessed == other.alreadyProcessed &&
         position == other.position;
 }
 
-void SituationsPool::addSituation(EarlySituation situation) {
-    if(std::find(container_.begin(), container_.end(), situation) != container_.end()) return;
-    container_.push_back(std::move(situation));
+size_t EarlySituationHasher::operator()(const EarleySituation &situation) const noexcept{
+    //We will hash it as a string
+    std::stringstream hashStream;
+    hashStream << situation.rule.initial.symbol;
+
+    size_t counter = 0;
+    for(auto symbolObj : situation.rule.result) {
+        if(counter == situation.alreadyProcessed) {
+            hashStream << EarleyGlobals::CURRENT_POS_SYMBOL;
+        }
+        hashStream << symbolObj.symbol;
+        ++counter;
+    }
+
+    hashStream << ':' << std::to_string(situation.position);
+    std::string toHash = hashStream.str();
+    return std::hash<std::string>()(std::move(toHash));
+}
+
+void SituationsPool::addSituation(EarleySituation situation) {
+    container_.insert(situation);
 }
 
 size_t SituationsPool::getSize() const {
     return container_.size();
 }
 
-std::vector<EarlySituation> SituationsPool::getSituations() const {
-    return container_;
+std::vector<EarleySituation> SituationsPool::getSituations() const {
+    std::vector<EarleySituation> toBeReturned = {};
+    for(const auto& elem : container_) {
+        toBeReturned.push_back(elem);
+    }
+    return toBeReturned;
 }

@@ -2,8 +2,6 @@
 
 #include <Grammar.h>
 
-inline char const EPSILON = '#';
-
 /* An easy way to convert char to
  * Symbol in order to use earley algorithm
  * implementation. If the char is capital

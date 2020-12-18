@@ -1,26 +1,36 @@
 #pragma once
 
+#include <algorithm>
+#include <sstream>
+
 #include <Grammar.h>
 #include <GrammarFetchers.h>
 
-struct EarlySituation {
+namespace EarleyGlobals {
+    inline char const EPSILON = '#';
+    inline char const CURRENT_POS_SYMBOL = '.';
+    inline auto const ADDITIONAL_NONTERMINAL = 'K';
+}
+
+struct EarleySituation {
     const GrammarRule& rule;
     size_t alreadyProcessed;
     size_t position;
 
-    bool operator==(const EarlySituation& other) const;
+    bool operator==(const EarleySituation& other) const;
 };
 
-/* This is D_j */
-//using SituationsPool = std::vector<EarlySituation>;
+struct EarlySituationHasher {
+    size_t operator()(const EarleySituation& situation) const noexcept;
+};
 
 class SituationsPool {
 private:
-    std::vector<EarlySituation> container_;
+    std::unordered_set<EarleySituation, EarlySituationHasher> container_;
 public:
-    void addSituation(EarlySituation situation);
+    void addSituation(EarleySituation situation);
     size_t getSize() const;
-    std::vector<EarlySituation> getSituations() const;
+    std::vector<EarleySituation> getSituations() const;
 };
 
 class Earley {
