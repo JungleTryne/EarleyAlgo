@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.0)
 
 project(Earley)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wa,-mbig-obj")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -Wall -Wa,-mbig-obj")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -Wall")
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -38,6 +38,4 @@ add_executable(EarleyTest
 
 target_link_libraries(EarleyTest Catch2::Catch2)
 
-install(TARGETS Earley EarleyTest DESTINATION ${CMAKE_INSTALL_PREFIX}/debug CONFIGURATIONS DEBUG)
-install(TARGETS Earley EarleyTest DESTINATION ${CMAKE_INSTALL_PREFIX}/release CONFIGURATIONS RELEASE)
-
+install(TARGETS Earley EarleyTest RUNTIME DESTINATION debug)

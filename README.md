@@ -32,8 +32,5 @@ as 'insert' method works with complexity O(n)~~. Now insert method is optimized 
 ### How to build
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+./build_and_install.sh && ./EarleyTest
 ```
